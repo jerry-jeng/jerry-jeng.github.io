@@ -1,6 +1,81 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>公分轉英吋轉換器</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f7fa;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            width: 300px;
+            text-align: center;
+        }
+        h2 { color: #333; margin-bottom: 1.5rem; }
+        .input-group { margin-bottom: 1rem; text-align: left; }
+        label { display: block; margin-bottom: 5px; color: #666; font-size: 0.9rem; }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        .result {
+            margin-top: 1.5rem;
+            padding: 10px;
+            background-color: #e8f0fe;
+            border-radius: 6px;
+            color: #1967d2;
+            font-weight: bold;
+            min-height: 24px;
+        }
+    </style>
+</head>
 <body>
-  <h1>哈囉！這是jerry cheng 的第一個 GitHub 網頁</h1>
+
+<div class="container">
+    <h2>長度轉換器</h2>
+    
+    <div class="input-group">
+        <label for="cmInput">公分 (cm)</label>
+        <input type="number" id="cmInput" placeholder="請輸入公分..." oninput="convert()">
+    </div>
+
+    <div class="result" id="resultDisplay">
+        英吋: --
+    </div>
+</div>
+
+<script>
+    function convert() {
+        const cm = document.getElementById('cmInput').value;
+        const resultDisplay = document.getElementById('resultDisplay');
+        
+        if (cm === "" || cm < 0) {
+            resultDisplay.innerText = "英吋: --";
+            return;
+        }
+
+        // 轉換公式：1 公分 = 0.393701 英吋
+        const inches = cm * 0.393701;
+        
+        // 四捨五入到小數點後兩位
+        resultDisplay.innerText = `英吋: ${inches.toFixed(2)} in`;
+    }
+</script>
+
 </body>
 </html>
