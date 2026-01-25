@@ -3,100 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>雙向長度轉換器</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            background-color: #f0f2f5;
-        }
-        .container {
-            background: white;
-            padding: 2rem;
-            border-radius: 16px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
-            width: 350px;
-            text-align: center;
-        }
-        /* 漫畫圖片樣式 */
-        .comic-img {
-            width: 100%;
-            max-width: 200px;
-            height: auto;
-            border-radius: 8px;
-            margin-bottom: 1.5rem;
-        }
-        h2 { color: #333; margin-top: 0; }
-        .input-group { margin-bottom: 1.2rem; text-align: left; }
-        label { display: block; margin-bottom: 8px; color: #555; font-weight: 600; }
-        input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #eee;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 1.1rem;
-            transition: border-color 0.3s;
-        }
-        input:focus {
-            outline: none;
-            border-color: #4A90E2;
-        }
-        .arrow {
-            font-size: 1.5rem;
-            color: #ccc;
-            margin: 5px 0;
-        }
-    </style>
+    <title>我的酷炫傳送門</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<div class="container">
-    <img src="https://via.placeholder.com/200x150.png?text=Comic+Image" alt="Comic" class="comic-img" id="mainImage">
+    <div class="background-animation"></div>
     
-    <h2>長度雙向轉換</h2>
-    
-    <div class="input-group">
-        <label for="cmInput">公分 (cm)</label>
-        <input type="number" id="cmInput" placeholder="輸入公分..." oninput="convert('cm')">
-    </div>
+    <main class="container">
+        <header>
+            <h1>探索新世界</h1>
+            <p>請選擇一個目的地開始你的旅程</p>
+        </header>
 
-    <div class="arrow">⇄</div>
+        <nav class="grid">
+            <a href="subpage1.html" class="card">
+                <div class="card-content">
+                    <h2>專案 A</h2>
+                    <p>這裡描述一些超酷的黑科技內容。</p>
+                </div>
+            </a>
 
-    <div class="input-group">
-        <label for="inInput">英吋 (inch)</label>
-        <input type="number" id="inInput" placeholder="輸入英吋..." oninput="convert('in')">
-    </div>
-</div>
+            <a href="subpage2.html" class="card">
+                <div class="card-content">
+                    <h2>專案 B</h2>
+                    <p>這裡描述一些超酷的黑科技內容。</p>
+                </div>
+            </a>
 
-<script>
-    function convert(unit) {
-        const cmField = document.getElementById('cmInput');
-        const inField = document.getElementById('inInput');
+            <a href="subpage3.html" class="card">
+                <div class="card-content">
+                    <h2>專案 C</h2>
+                    <p>這裡描述一些超酷的黑科技內容。</p>
+                </div>
+            </a>
 
-        if (unit === 'cm') {
-            const cmValue = cmField.value;
-            if (cmValue === "") {
-                inField.value = "";
-            } else {
-                // 公分轉英吋: cm / 2.54
-                inField.value = (cmValue / 2.54).toFixed(2);
-            }
-        } else if (unit === 'in') {
-            const inValue = inField.value;
-            if (inValue === "") {
-                cmField.value = "";
-            } else {
-                // 英吋轉公分: inch * 2.54
-                cmField.value = (inValue * 2.54).toFixed(2);
-            }
-        }
-    }
-</script>
+            <a href="subpage4.html" class="card">
+                <div class="card-content">
+                    <h2>專案 D</h2>
+                    <p>這裡描述一些超酷的黑科技內容。</p>
+                </div>
+            </a>
 
+            <a href="subpage5.html" class="card">
+                <div class="card-content">
+                    <h2>專案 E</h2>
+                    <p>這裡描述一些超酷的黑科技內容。</p>
+                </div>
+            </a>
+
+            <a href="subpage2.html" class="card">
+                <div class="card-content">
+                    <h2>視覺藝術</h2>
+                    <p>探索數位美學的極致體驗。</p>
+                </div>
+            </a>
+
+            <a href="subpage3.html" class="card">
+                <div class="card-content">
+                    <h2>關於我</h2>
+                    <p>了解這個網頁背後的創作者。</p>
+                </div>
+            </a>
+
+            <a href="subpage4.html" class="card">
+                <div class="card-content">
+                    <h2>聯絡資訊</h2>
+                    <p>有任何想法嗎？歡迎來信。</p>
+                </div>
+            </a>
+        </nav>
+    </main>
+
+    <script src="script.js"></script>
 </body>
 </html>
