@@ -2,31 +2,85 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>子網頁 - 專案 B</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>簡易 AI 聊天室 (Gemini)</title>
     <style>
-        body {
-            background-color: #0f172a;
-            color: white;
-            font-family: sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-        }
-        .back-btn {
-            margin-top: 20px;
-            padding: 10px 20px;
-            color: #38bdf8;
-            border: 1px solid #38bdf8;
-            text-decoration: none;
-            border-radius: 5px;
-        }
+        body { font-family: sans-serif; max-width: 600px; margin: 20px auto; padding: 20px; background-color: #f4f4f9; }
+        #chat-container { border: 1px solid #ccc; padding: 15px; height: 400px; overflow-y: auto; background: white; border-radius: 8px; margin-bottom: 10px; }
+        .message { margin-bottom: 10px; padding: 8px 12px; border-radius: 5px; line-height: 1.5; }
+        .user { background-color: #e3f2fd; align-self: flex-end; }
+        .ai { background-color: #f1f8e9; border: 1px solid #dcedc8; }
+        .input-area { display: flex; gap: 10px; }
+        input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 10px 20px; background-color: #4285f4; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:disabled { background-color: #ccc; }
     </style>
 </head>
 <body>
-    <h1>這是子網頁 B </h1>
-    <p>內容正在建設中...</p>
-    <a href="index.html" class="back-btn">回到主頁</a>
+
+    <h2>AI 聊天機器人</h2>
+    <div id="chat-container">
+        <div class="message ai">你好！我是 Gemini AI，請輸入問題來開始對話。</div>
+    </div>
+
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="輸入您的問題..." onkeypress="if(event.key==='Enter') sendMessage()">
+        <button id="sendBtn" onclick="sendMessage()">發送</button>
+    </div>
+
+    <script type="module">
+        // 注意：前端直接寫 API Key 僅限個人測試。若要公開發布，請務必放在後端，以免被盜用。
+        const API_KEY = "在此處貼上你的_GEMINI_API_KEY"; 
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
+
+        window.sendMessage = async function() {
+            const inputField = document.getElementById('userInput');
+            const chatContainer = document.getElementById('chat-container');
+            const sendBtn = document.getElementById('sendBtn');
+            const question = inputField.value.trim();
+
+            if (!question) return;
+
+            // 1. 顯示使用者問題
+            appendMessage('user', question);
+            inputField.value = '';
+            sendBtn.disabled = true;
+
+            // 2. 顯示「思考中...」
+            const aiMsgDiv = appendMessage('ai', '思考中...');
+
+            try {
+                // 3. 調用 API
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: question }] }]
+                    })
+                });
+
+                const data = await response.json();
+                const aiResponse = data.candidates[0].content.parts[0].text;
+
+                // 4. 顯示 AI 結果
+                aiMsgDiv.innerText = aiResponse;
+            } catch (error) {
+                aiMsgDiv.innerText = "抱歉，連線出錯了：" + error.message;
+            } finally {
+                sendBtn.disabled = false;
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+        };
+
+        function appendMessage(sender, text) {
+            const container = document.getElementById('chat-container');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${sender}`;
+            msgDiv.innerText = text;
+            container.appendChild(msgDiv);
+            container.scrollTop = container.scrollHeight;
+            return msgDiv;
+        }
+    </script>
 </body>
 </html>
