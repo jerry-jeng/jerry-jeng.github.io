@@ -1,32 +1,1935 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <title>子網頁 - 專案 D</title>
-    <style>
-        body {
-            background-color: #0f172a;
-            color: white;
-            font-family: sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-        }
-        .back-btn {
-            margin-top: 20px;
-            padding: 10px 20px;
-            color: #38bdf8;
-            border: 1px solid #38bdf8;
-            text-decoration: none;
-            border-radius: 5px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 訓練平台</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #00e5ff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+    --text: #e8e8f0;
+    --text2: #888899;
+    --text3: #555566;
+    --mono: 'Space Mono', monospace;
+    --sans: 'Noto Sans TC', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── Grid background ─── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─── Header ─── */
+  header {
+    position: relative;
+    z-index: 10;
+    padding: 0 2rem;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,10,15,0.9);
+    backdrop-filter: blur(12px);
+  }
+
+  .logo {
+    font-family: var(--mono);
+    font-size: 1.1rem;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .api-status {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .api-status.connected { color: var(--accent3); border-color: var(--accent3); }
+  .api-status.disconnected { color: var(--text3); border-color: var(--text3); }
+  .api-status::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  /* ─── Layout ─── */
+  .app {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    height: calc(100vh - 64px);
+  }
+
+  /* ─── Sidebar ─── */
+  aside {
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    padding: 1.5rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow-y: auto;
+  }
+
+  .nav-section {
+    padding: 0.5rem 1rem;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-top: 0.5rem;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 1.5rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text2);
+    transition: all 0.15s;
+    border-left: 2px solid transparent;
+    user-select: none;
+  }
+  .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+  .nav-item.active {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    background: rgba(0,229,255,0.05);
+  }
+  .nav-item .icon { font-size: 1rem; width: 18px; text-align: center; }
+  .nav-badge {
+    margin-left: auto;
+    background: var(--accent2);
+    color: white;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+  }
+
+  /* ─── Main content ─── */
+  main {
+    overflow-y: auto;
+    padding: 2rem;
+  }
+
+  /* ─── Page sections ─── */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ─── Page header ─── */
+  .page-header {
+    margin-bottom: 2rem;
+  }
+  .page-header h1 {
+    font-family: var(--mono);
+    font-size: 1.5rem;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .page-header p {
+    color: var(--text2);
+    font-size: 0.85rem;
+  }
+  .page-header h1 span { color: var(--accent); }
+
+  /* ─── Cards ─── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .card-title {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ─── Stats grid ─── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent-color, var(--accent));
+  }
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--text2);
+    margin-bottom: 8px;
+    font-family: var(--mono);
+  }
+  .stat-value {
+    font-family: var(--mono);
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .stat-sub {
+    font-size: 0.7rem;
+    color: var(--text3);
+    margin-top: 4px;
+  }
+
+  /* ─── Form elements ─── */
+  label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text2);
+    margin-bottom: 6px;
+    font-family: var(--mono);
+  }
+
+  input, textarea, select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-family: var(--sans);
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 1rem;
+  }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,229,255,0.08);
+  }
+  textarea { resize: vertical; min-height: 100px; }
+  input[type="password"] { font-family: var(--mono); letter-spacing: 2px; }
+
+  /* ─── Buttons ─── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: none;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+    font-weight: 700;
+  }
+  .btn-primary:hover { background: #33eeff; transform: translateY(-1px); }
+  .btn-secondary {
+    background: transparent;
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger {
+    background: transparent;
+    color: var(--danger);
+    border: 1px solid var(--danger);
+  }
+  .btn-danger:hover { background: var(--danger); color: white; }
+  .btn-success {
+    background: var(--accent3);
+    color: #000;
+    font-weight: 700;
+  }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  /* ─── Table ─── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 12px;
+    border-bottom: 1px solid rgba(42,42,58,0.5);
+    color: var(--text2);
+  }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* ─── Tags / Labels ─── */
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-family: var(--mono);
+    gap: 5px;
+  }
+  .tag-pos { background: rgba(16,185,129,0.15); color: var(--accent3); }
+  .tag-neg { background: rgba(239,68,68,0.15); color: var(--danger); }
+  .tag-neu { background: rgba(100,100,150,0.15); color: var(--text2); }
+  .tag-pending { background: rgba(245,158,11,0.15); color: var(--warn); }
+  .tag-done { background: rgba(0,229,255,0.1); color: var(--accent); }
+
+  /* ─── Upload zone ─── */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 3rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 1rem;
+  }
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(0,229,255,0.03);
+  }
+  .upload-zone .upload-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+  .upload-zone p { color: var(--text2); font-size: 0.85rem; }
+  .upload-zone span { color: var(--accent); font-family: var(--mono); font-size: 0.8rem; }
+
+  /* ─── Progress bar ─── */
+  .progress-wrap { margin-bottom: 1rem; }
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--text2);
+    margin-bottom: 6px;
+  }
+  .progress-bar {
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    transition: width 0.5s ease;
+  }
+
+  /* ─── Labeling interface ─── */
+  .label-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .label-text {
+    font-size: 1rem;
+    line-height: 1.7;
+    margin-bottom: 1.5rem;
+    color: var(--text);
+    padding: 1rem;
+    background: rgba(0,0,0,0.3);
+    border-radius: 6px;
+    border-left: 3px solid var(--accent2);
+  }
+  .label-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .label-btn {
+    flex: 1;
+    min-width: 100px;
+    padding: 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: 0.9rem;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .label-btn:hover { transform: translateY(-2px); }
+  .label-btn.pos { border-color: var(--accent3); }
+  .label-btn.pos:hover { background: rgba(16,185,129,0.2); color: var(--accent3); }
+  .label-btn.neg { border-color: var(--danger); }
+  .label-btn.neg:hover { background: rgba(239,68,68,0.2); color: var(--danger); }
+  .label-btn.neu { border-color: var(--text3); }
+  .label-btn.neu:hover { background: rgba(100,100,150,0.2); color: var(--text2); }
+
+  /* ─── Chat interface ─── */
+  .chat-wrap {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 200px);
+    min-height: 400px;
+  }
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .msg {
+    max-width: 80%;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    animation: fadeUp 0.2s ease;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .msg-user {
+    background: rgba(0,229,255,0.1);
+    border: 1px solid rgba(0,229,255,0.2);
+    align-self: flex-end;
+    color: var(--text);
+  }
+  .msg-ai {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    align-self: flex-start;
+    color: var(--text);
+  }
+  .msg-role {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--text3);
+    margin-bottom: 5px;
+  }
+  .chat-input-wrap {
+    display: flex;
+    gap: 10px;
+  }
+  .chat-input-wrap input {
+    flex: 1;
+    margin-bottom: 0;
+  }
+
+  /* ─── Training log ─── */
+  .log-terminal {
+    background: #050508;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    height: 300px;
+    overflow-y: auto;
+    line-height: 1.8;
+  }
+  .log-line { display: flex; gap: 10px; }
+  .log-time { color: var(--text3); flex-shrink: 0; }
+  .log-info { color: var(--accent); }
+  .log-success { color: var(--accent3); }
+  .log-warn { color: var(--warn); }
+  .log-err { color: var(--danger); }
+
+  /* ─── Settings ─── */
+  .settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  /* ─── Notification ─── */
+  #notif {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .notif-item {
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-family: var(--mono);
+    border: 1px solid;
+    backdrop-filter: blur(12px);
+    animation: slideIn 0.3s ease;
+    max-width: 340px;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .notif-success { background: rgba(16,185,129,0.15); border-color: var(--accent3); color: var(--accent3); }
+  .notif-error { background: rgba(239,68,68,0.15); border-color: var(--danger); color: var(--danger); }
+  .notif-info { background: rgba(0,229,255,0.1); border-color: var(--accent); color: var(--accent); }
+
+  /* ─── Responsive ─── */
+  @media(max-width:768px) {
+    .app { grid-template-columns: 1fr; }
+    aside { display: none; }
+    .stats-grid { grid-template-columns: repeat(2,1fr); }
+    .settings-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ─── Scrollbar ─── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+  .text-muted { color: var(--text2); font-size: 0.83rem; }
+  .mt { margin-top: 1rem; }
+  .inline-code {
+    font-family: var(--mono);
+    background: var(--surface2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: var(--accent);
+  }
+</style>
 </head>
 <body>
-    <h1>這是子網頁 D</h1>
-    <p>內容正在建設中...</p>
-    <a href="index.html" class="back-btn">回到主頁</a>
+
+<!-- Header -->
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    <span>AI_TRAINER</span>
+    <span style="color:var(--text3);font-size:0.7rem;">v1.0</span>
+  </div>
+  <div class="header-right">
+    <div class="api-status disconnected" id="apiStatusBadge">未連線</div>
+    <button class="btn btn-secondary" onclick="navigate('settings')" style="padding:6px 14px">⚙ 設定</button>
+  </div>
+</header>
+
+<!-- Layout -->
+<div class="app">
+
+  <!-- Sidebar -->
+  <aside>
+    <div class="nav-section">主選單</div>
+    <div class="nav-item active" onclick="navigate('dashboard')" id="nav-dashboard">
+      <span class="icon">◈</span> 總覽
+    </div>
+    <div class="nav-section">資料管理</div>
+    <div class="nav-item" onclick="navigate('dataset')" id="nav-dataset">
+      <span class="icon">⊞</span> 資料集
+      <span class="nav-badge" id="badgeDataset">0</span>
+    </div>
+    <div class="nav-item" onclick="navigate('upload')" id="nav-upload">
+      <span class="icon">↑</span> 上傳資料
+    </div>
+    <div class="nav-item" onclick="navigate('label')" id="nav-label">
+      <span class="icon">◎</span> 標記介面
+      <span class="nav-badge" id="badgePending" style="background:var(--warn)">0</span>
+    </div>
+    <div class="nav-section">AI 訓練</div>
+    <div class="nav-item" onclick="navigate('prompt')" id="nav-prompt">
+      <span class="icon">✦</span> Prompt 設計
+    </div>
+    <div class="nav-item" onclick="navigate('train')" id="nav-train">
+      <span class="icon">▶</span> 訓練執行
+    </div>
+    <div class="nav-item" onclick="navigate('eval')" id="nav-eval">
+      <span class="icon">◐</span> 評估測試
+    </div>
+    <div class="nav-section">系統</div>
+    <div class="nav-item" onclick="navigate('export')" id="nav-export">
+      <span class="icon">↓</span> 匯出
+    </div>
+    <div class="nav-item" onclick="navigate('settings')" id="nav-settings">
+      <span class="icon">⚙</span> 設定
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main>
+
+    <!-- ── DASHBOARD ── -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <h1>系統<span>總覽</span></h1>
+        <p>監控訓練進度與資料集狀態</p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card" style="--accent-color:var(--accent)">
+          <div class="stat-label">總資料筆數</div>
+          <div class="stat-value" id="statTotal">0</div>
+          <div class="stat-sub">所有已載入資料</div>
+        </div>
+        <div class="stat-card" style="--accent-color:var(--accent3)">
+          <div class="stat-label">已標記</div>
+          <div class="stat-value" id="statLabeled">0</div>
+          <div class="stat-sub">含標籤資料</div>
+        </div>
+        <div class="stat-card" style="--accent-color:var(--warn)">
+          <div class="stat-label">待標記</div>
+          <div class="stat-value" id="statPending">0</div>
+          <div class="stat-sub">尚未標記</div>
+        </div>
+        <div class="stat-card" style="--accent-color:var(--accent2)">
+          <div class="stat-label">訓練輪數</div>
+          <div class="stat-value" id="statRounds">0</div>
+          <div class="stat-sub">已完成訓練</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">⚡ 快速操作</div>
+          <div class="btn-group">
+            <button class="btn btn-primary" onclick="navigate('upload')">↑ 上傳資料</button>
+            <button class="btn btn-secondary" onclick="navigate('label')">◎ 開始標記</button>
+            <button class="btn btn-success" onclick="navigate('train')">▶ 執行訓練</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">◑ 標記進度</div>
+          <div class="progress-wrap">
+            <div class="progress-label">
+              <span>完成率</span>
+              <span id="progressPct">0%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="progressFill" style="width:0%"></div>
+            </div>
+          </div>
+          <p class="text-muted" id="progressDesc">尚無資料，請先上傳資料集。</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📋 最近活動</div>
+        <div id="recentActivity" class="text-muted" style="font-size:0.83rem">暫無活動記錄。</div>
+      </div>
+    </div>
+
+    <!-- ── DATASET ── -->
+    <div class="page" id="page-dataset">
+      <div class="page-header">
+        <h1>資料<span>集</span></h1>
+        <p>瀏覽、搜尋、管理所有訓練資料</p>
+      </div>
+      <div class="card">
+        <div style="display:flex;gap:10px;margin-bottom:1rem">
+          <input type="text" id="searchInput" placeholder="搜尋文字..." style="flex:1;margin:0" oninput="renderDatasetTable()">
+          <select id="filterLabel" onchange="renderDatasetTable()" style="width:140px;margin:0">
+            <option value="">全部標籤</option>
+            <option value="positive">正面</option>
+            <option value="negative">負面</option>
+            <option value="neutral">中性</option>
+            <option value="pending">未標記</option>
+          </select>
+          <button class="btn btn-danger" onclick="clearDataset()">✕ 清除全部</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>內容預覽</th>
+                <th>標籤</th>
+                <th>備註</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="datasetTbody">
+              <tr><td colspan="5" style="text-align:center;color:var(--text3);padding:2rem">尚無資料</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── UPLOAD ── -->
+    <div class="page" id="page-upload">
+      <div class="page-header">
+        <h1>上傳<span>資料</span></h1>
+        <p>支援 CSV、JSON、TXT 格式，或手動輸入</p>
+      </div>
+
+      <div class="two-col">
+        <div>
+          <div class="card">
+            <div class="card-title">↑ 檔案上傳</div>
+            <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()"
+                 ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+              <div class="upload-icon">📂</div>
+              <p>點擊或拖曳檔案至此</p>
+              <span>支援 .csv / .json / .txt</span>
+            </div>
+            <input type="file" id="fileInput" accept=".csv,.json,.txt" style="display:none" onchange="handleFileInput(event)">
+            <div id="uploadStatus" class="text-muted" style="font-size:0.8rem"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">📋 CSV 格式說明</div>
+            <p class="text-muted" style="font-size:0.8rem;line-height:1.8">
+              CSV 第一列為標頭，支援欄位：<br>
+              <span class="inline-code">text</span> 必填 — 訓練文本<br>
+              <span class="inline-code">label</span> 選填 — positive/negative/neutral<br>
+              <span class="inline-code">note</span> 選填 — 備註說明<br><br>
+              JSON 格式：物件陣列，欄位同上。<br>
+              TXT 格式：每行一筆資料，自動設為待標記。
+            </p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">✏ 手動新增</div>
+          <label>文字內容 *</label>
+          <textarea id="manualText" placeholder="輸入訓練資料文字..."></textarea>
+          <label>標籤</label>
+          <select id="manualLabel">
+            <option value="pending">⏳ 待標記</option>
+            <option value="positive">✅ 正面</option>
+            <option value="negative">❌ 負面</option>
+            <option value="neutral">⚪ 中性</option>
+          </select>
+          <label>備註</label>
+          <input type="text" id="manualNote" placeholder="選填備註...">
+          <button class="btn btn-primary" onclick="addManualEntry()">＋ 新增資料</button>
+          <hr class="divider">
+          <div class="card-title">🔗 示範資料</div>
+          <button class="btn btn-secondary" onclick="loadSampleData()">載入 20 筆示範資料</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── LABEL ── -->
+    <div class="page" id="page-label">
+      <div class="page-header">
+        <h1>標記<span>介面</span></h1>
+        <p>對每筆資料進行標記分類</p>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+        <div class="progress-wrap" style="flex:1;margin:0">
+          <div class="progress-label">
+            <span>標記進度</span>
+            <span id="labelProgressText">0 / 0</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="labelProgressFill" style="width:0%"></div>
+          </div>
+        </div>
+        <button class="btn btn-secondary" onclick="skipCurrent()">跳過 →</button>
+      </div>
+
+      <div id="labelContent">
+        <div class="label-card">
+          <div class="text-muted" style="margin-bottom:1rem;font-family:var(--mono);font-size:0.75rem">
+            目前無待標記資料。請先至「上傳資料」頁面新增資料。
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PROMPT ── -->
+    <div class="page" id="page-prompt">
+      <div class="page-header">
+        <h1>Prompt <span>設計</span></h1>
+        <p>設計系統提示詞，定義 AI 的行為與回應風格</p>
+      </div>
+
+      <div class="two-col">
+        <div>
+          <div class="card">
+            <div class="card-title">⚙ 系統提示詞 (System Prompt)</div>
+            <label>System Prompt</label>
+            <textarea id="systemPrompt" style="min-height:200px" placeholder="你是一個專業的..."></textarea>
+            <label>任務描述</label>
+            <textarea id="taskDesc" style="min-height:100px" placeholder="描述 AI 需要完成的任務..."></textarea>
+            <button class="btn btn-primary" onclick="savePromptConfig()">💾 儲存設定</button>
+          </div>
+
+          <div class="card">
+            <div class="card-title">📌 Few-Shot 範例</div>
+            <p class="text-muted" style="font-size:0.8rem;margin-bottom:1rem">自動從已標記資料中抽取範例注入 Prompt</p>
+            <label>範例數量</label>
+            <input type="number" id="fewShotCount" value="3" min="0" max="20">
+            <label>範例選取策略</label>
+            <select id="fewShotStrategy">
+              <option value="random">隨機抽取</option>
+              <option value="balanced">平均各類</option>
+              <option value="recent">最新資料</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">👁 Prompt 預覽</div>
+          <div id="promptPreview" class="log-terminal" style="height:auto;min-height:400px;white-space:pre-wrap;color:var(--text2);font-size:0.78rem"></div>
+          <button class="btn btn-secondary mt" onclick="generatePromptPreview()">🔄 更新預覽</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TRAIN ── -->
+    <div class="page" id="page-train">
+      <div class="page-header">
+        <h1>訓練<span>執行</span></h1>
+        <p>使用 Claude API 進行 Prompt 微調與批次測試</p>
+      </div>
+
+      <div class="two-col">
+        <div>
+          <div class="card">
+            <div class="card-title">▶ 訓練設定</div>
+            <label>訓練模式</label>
+            <select id="trainMode">
+              <option value="eval">評估模式 — 批次測試資料集</option>
+              <option value="finetune">Prompt 最佳化 — 自動調整提示詞</option>
+              <option value="generate">資料增強 — 生成更多訓練資料</option>
+            </select>
+            <label>批次大小 (每次送出幾筆)</label>
+            <input type="number" id="batchSize" value="5" min="1" max="50">
+            <label>溫度 (Temperature)</label>
+            <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.3" oninput="document.getElementById('tempVal').textContent=this.value" style="padding:0;height:auto;background:none;border:none">
+            <span class="text-muted" id="tempVal">0.3</span>
+            <hr class="divider">
+            <div class="btn-group">
+              <button class="btn btn-success" id="btnStartTrain" onclick="startTraining()">▶ 開始訓練</button>
+              <button class="btn btn-danger" id="btnStopTrain" onclick="stopTraining()" disabled>■ 停止</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">📊 訓練統計</div>
+            <div id="trainStats" class="text-muted" style="font-family:var(--mono);font-size:0.8rem;line-height:2">
+              等待開始訓練...
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📟 訓練日誌</div>
+          <div class="log-terminal" id="trainLog">
+            <div class="log-line"><span class="log-time">--:--:--</span><span class="log-info">等待開始...</span></div>
+          </div>
+          <div class="progress-wrap mt">
+            <div class="progress-label">
+              <span id="trainProgressLabel">訓練進度</span>
+              <span id="trainProgressPct">0%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="trainProgressFill" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── EVAL ── -->
+    <div class="page" id="page-eval">
+      <div class="page-header">
+        <h1>評估<span>測試</span></h1>
+        <p>與 AI 對話，測試訓練效果</p>
+      </div>
+
+      <div class="two-col">
+        <div>
+          <div class="card">
+            <div class="card-title">💬 即時對話測試</div>
+            <div class="chat-wrap" style="height:400px">
+              <div class="chat-messages" id="chatMessages">
+                <div class="msg msg-ai">
+                  <div class="msg-role">AI_ASSISTANT</div>
+                  你好！我是基於你訓練資料設定的 AI。請開始測試對話。
+                </div>
+              </div>
+              <div class="chat-input-wrap">
+                <input type="text" id="chatInput" placeholder="輸入訊息..." onkeydown="if(event.key==='Enter')sendChat()">
+                <button class="btn btn-primary" onclick="sendChat()" id="btnSendChat">發送</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="card">
+            <div class="card-title">🎯 批次評估</div>
+            <p class="text-muted" style="font-size:0.83rem;margin-bottom:1rem">對已標記資料進行批次預測，計算準確率</p>
+            <label>測試資料比例</label>
+            <input type="number" id="evalSplit" value="20" min="5" max="50"> <span class="text-muted" style="margin-top:-0.8rem;display:block">% 的已標記資料作為測試集</span>
+            <button class="btn btn-primary mt" onclick="runBatchEval()" id="btnRunEval">▶ 執行批次評估</button>
+            <hr class="divider">
+            <div id="evalResults">
+              <div class="text-muted" style="font-size:0.83rem">尚未執行評估。</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">📈 評估歷史</div>
+            <div id="evalHistory" class="text-muted" style="font-family:var(--mono);font-size:0.75rem;line-height:2">
+              無評估記錄。
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── EXPORT ── -->
+    <div class="page" id="page-export">
+      <div class="page-header">
+        <h1>資料<span>匯出</span></h1>
+        <p>將訓練資料與設定匯出為標準格式</p>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">📦 匯出資料集</div>
+          <div class="btn-group" style="flex-direction:column">
+            <button class="btn btn-secondary" onclick="exportData('json')">↓ 匯出 JSON（完整資料）</button>
+            <button class="btn btn-secondary" onclick="exportData('csv')">↓ 匯出 CSV</button>
+            <button class="btn btn-secondary" onclick="exportData('labeled')">↓ 僅匯出已標記資料 (JSON)</button>
+            <button class="btn btn-secondary" onclick="exportData('openai')">↓ 匯出 OpenAI Fine-tune 格式</button>
+            <button class="btn btn-secondary" onclick="exportData('prompt')">↓ 匯出 Prompt 設定</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">🔄 匯入備份</div>
+          <p class="text-muted" style="font-size:0.83rem;margin-bottom:1rem">將之前匯出的 JSON 備份重新載入</p>
+          <div class="upload-zone" onclick="document.getElementById('importInput').click()" style="padding:2rem">
+            <div class="upload-icon" style="font-size:1.5rem">📁</div>
+            <p>點擊選擇備份 JSON 檔</p>
+          </div>
+          <input type="file" id="importInput" accept=".json" style="display:none" onchange="importBackup(event)">
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS ── -->
+    <div class="page" id="page-settings">
+      <div class="page-header">
+        <h1>系統<span>設定</span></h1>
+        <p>API 金鑰、模型選擇與其他設定</p>
+      </div>
+
+      <div class="settings-grid">
+        <div class="card">
+          <div class="card-title">🔑 API 設定</div>
+          <label>Claude API Key</label>
+          <input type="password" id="apiKey" placeholder="sk-ant-...">
+          <label>模型</label>
+          <select id="modelSelect">
+            <option value="claude-sonnet-4-20250514">Claude Sonnet 4 (推薦)</option>
+            <option value="claude-opus-4-20250514">Claude Opus 4 (最強)</option>
+            <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (快速/省成本)</option>
+          </select>
+          <label>Max Tokens</label>
+          <input type="number" id="maxTokens" value="1000" min="100" max="4096">
+          <button class="btn btn-primary" onclick="saveSettings()">💾 儲存並測試連線</button>
+          <div id="connTestResult" class="text-muted mt" style="font-size:0.8rem;font-family:var(--mono)"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">⚙ 系統選項</div>
+          <label>介面語言</label>
+          <select>
+            <option>繁體中文</option>
+            <option>English</option>
+          </select>
+          <label>自動儲存（localStorage）</label>
+          <select id="autoSave">
+            <option value="1">開啟</option>
+            <option value="0">關閉</option>
+          </select>
+          <label>標記快捷鍵</label>
+          <p class="text-muted" style="font-size:0.8rem;line-height:2">
+            <span class="inline-code">1</span> 正面 &nbsp;
+            <span class="inline-code">2</span> 負面 &nbsp;
+            <span class="inline-code">3</span> 中性 &nbsp;
+            <span class="inline-code">→</span> 跳過
+          </p>
+          <hr class="divider">
+          <button class="btn btn-danger" onclick="if(confirm('確定清除所有設定？'))resetAll()">⚠ 重置所有資料</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">ℹ 部署說明</div>
+        <p class="text-muted" style="font-size:0.83rem;line-height:2">
+          本系統為純前端單一 HTML 檔案，直接上傳至 GitHub Repository 即可透過 GitHub Pages 訪問。<br>
+          資料儲存於瀏覽器 <span class="inline-code">localStorage</span>，不會上傳至任何伺服器。<br>
+          API Key 僅存於本機瀏覽器，由瀏覽器直接呼叫 Claude API（需注意 CORS 政策）。<br>
+          <br>
+          GitHub Pages 部署步驟：<br>
+          1. 建立 GitHub Repository → 上傳 <span class="inline-code">index.html</span><br>
+          2. Settings → Pages → Source: main branch<br>
+          3. 訪問 <span class="inline-code">https://&lt;username&gt;.github.io/&lt;repo&gt;</span>
+        </p>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Notification -->
+<div id="notif"></div>
+
+<script>
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+const state = {
+  dataset: [],
+  labelIndex: 0,
+  config: {
+    apiKey: '',
+    model: 'claude-sonnet-4-20250514',
+    maxTokens: 1000,
+    systemPrompt: '你是一個專業的文字分析助手，擅長情感分析與文本分類。',
+    taskDesc: '請分析以下文字的情感傾向，並給出分類結果（正面/負面/中性）與原因。',
+    fewShotCount: 3,
+    fewShotStrategy: 'balanced',
+  },
+  training: {
+    running: false,
+    rounds: 0,
+    results: [],
+  },
+  activity: [],
+  evalHistory: [],
+  chatHistory: [],
+};
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+function init() {
+  loadFromStorage();
+  renderDashboard();
+  renderDatasetTable();
+  renderLabelInterface();
+  renderPromptPreview();
+  generatePromptPreview();
+  updateApiStatus();
+  bindKeyboardShortcuts();
+  loadSettingsUI();
+}
+
+function loadFromStorage() {
+  try {
+    const saved = localStorage.getItem('ai_trainer_state');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      Object.assign(state.dataset, parsed.dataset || []);
+      state.dataset = parsed.dataset || [];
+      Object.assign(state.config, parsed.config || {});
+      state.training.rounds = parsed.trainingRounds || 0;
+      state.activity = parsed.activity || [];
+      state.evalHistory = parsed.evalHistory || [];
+    }
+  } catch(e) {}
+}
+
+function saveToStorage() {
+  try {
+    localStorage.setItem('ai_trainer_state', JSON.stringify({
+      dataset: state.dataset,
+      config: state.config,
+      trainingRounds: state.training.rounds,
+      activity: state.activity,
+      evalHistory: state.evalHistory,
+    }));
+  } catch(e) {}
+}
+
+// ═══════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  const nav = document.getElementById('nav-' + page);
+  if (nav) nav.classList.add('active');
+  if (page === 'dashboard') renderDashboard();
+  if (page === 'label') renderLabelInterface();
+  if (page === 'prompt') generatePromptPreview();
+}
+
+// ═══════════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════════
+function renderDashboard() {
+  const total = state.dataset.length;
+  const labeled = state.dataset.filter(d => d.label !== 'pending').length;
+  const pending = total - labeled;
+  const pct = total > 0 ? Math.round((labeled / total) * 100) : 0;
+
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statLabeled').textContent = labeled;
+  document.getElementById('statPending').textContent = pending;
+  document.getElementById('statRounds').textContent = state.training.rounds;
+  document.getElementById('progressPct').textContent = pct + '%';
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressDesc').textContent =
+    total > 0 ? `已標記 ${labeled} / ${total} 筆，完成率 ${pct}%` : '尚無資料，請先上傳資料集。';
+
+  document.getElementById('badgeDataset').textContent = total;
+  document.getElementById('badgePending').textContent = pending;
+
+  // Activity
+  const acts = state.activity.slice(-5).reverse();
+  document.getElementById('recentActivity').innerHTML = acts.length
+    ? acts.map(a => `<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:0.8rem"><span style="color:var(--text3);font-family:var(--mono)">${a.time}</span> ${a.msg}</div>`).join('')
+    : '暫無活動記錄。';
+}
+
+function addActivity(msg) {
+  const now = new Date().toLocaleTimeString('zh-TW', { hour12: false });
+  state.activity.push({ time: now, msg });
+  if (state.activity.length > 50) state.activity.shift();
+}
+
+// ═══════════════════════════════════════════
+//  DATASET
+// ═══════════════════════════════════════════
+function renderDatasetTable() {
+  const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
+  const filter = document.getElementById('filterLabel')?.value || '';
+  let data = state.dataset;
+  if (search) data = data.filter(d => d.text.toLowerCase().includes(search));
+  if (filter) data = data.filter(d => d.label === filter);
+
+  const tbody = document.getElementById('datasetTbody');
+  if (data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:2rem">${state.dataset.length === 0 ? '尚無資料' : '無符合條件的資料'}</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.map((d, i) => `
+    <tr>
+      <td style="font-family:var(--mono);color:var(--text3)">${state.dataset.indexOf(d) + 1}</td>
+      <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(d.text)}</td>
+      <td>${labelTag(d.label)}</td>
+      <td style="color:var(--text3);font-size:0.8rem">${escHtml(d.note || '')}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.7rem" onclick="editLabel(${state.dataset.indexOf(d)})">編輯</button>
+          <button class="btn btn-danger" style="padding:4px 10px;font-size:0.7rem" onclick="deleteEntry(${state.dataset.indexOf(d)})">刪除</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function labelTag(label) {
+  const map = {
+    positive: '<span class="tag tag-pos">✓ 正面</span>',
+    negative: '<span class="tag tag-neg">✕ 負面</span>',
+    neutral: '<span class="tag tag-neu">⚬ 中性</span>',
+    pending: '<span class="tag tag-pending">⏳ 待標記</span>',
+  };
+  return map[label] || label;
+}
+
+function editLabel(idx) {
+  const entry = state.dataset[idx];
+  const labels = ['positive', 'negative', 'neutral', 'pending'];
+  const current = labels.indexOf(entry.label);
+  const next = labels[(current + 1) % labels.length];
+  entry.label = next;
+  saveToStorage();
+  renderDatasetTable();
+  renderDashboard();
+}
+
+function deleteEntry(idx) {
+  state.dataset.splice(idx, 1);
+  saveToStorage();
+  renderDatasetTable();
+  renderDashboard();
+  notify('已刪除一筆資料', 'info');
+}
+
+function clearDataset() {
+  if (!confirm('確定要清除所有資料？')) return;
+  state.dataset = [];
+  saveToStorage();
+  renderDatasetTable();
+  renderDashboard();
+  notify('已清除所有資料', 'info');
+}
+
+// ═══════════════════════════════════════════
+//  UPLOAD
+// ═══════════════════════════════════════════
+function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('dragover'); }
+function handleDragLeave(e) { e.currentTarget.classList.remove('dragover'); }
+function handleDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+}
+function handleFileInput(e) {
+  const file = e.target.files[0];
+  if (file) processFile(file);
+  e.target.value = '';
+}
+
+function processFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const text = e.target.result;
+    const ext = file.name.split('.').pop().toLowerCase();
+    let entries = [];
+    try {
+      if (ext === 'json') {
+        const parsed = JSON.parse(text);
+        const arr = Array.isArray(parsed) ? parsed : [parsed];
+        entries = arr.map(item => ({
+          text: String(item.text || item.content || item.input || ''),
+          label: item.label || 'pending',
+          note: item.note || '',
+          id: Date.now() + Math.random(),
+        })).filter(e => e.text);
+      } else if (ext === 'csv') {
+        const lines = text.split('\n').filter(l => l.trim());
+        const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+        for (let i = 1; i < lines.length; i++) {
+          const vals = parseCSVLine(lines[i]);
+          const obj = {};
+          headers.forEach((h, idx) => obj[h] = vals[idx] || '');
+          if (obj.text) entries.push({
+            text: obj.text, label: obj.label || 'pending',
+            note: obj.note || '', id: Date.now() + Math.random()
+          });
+        }
+      } else {
+        entries = text.split('\n').filter(l => l.trim()).map(l => ({
+          text: l.trim(), label: 'pending', note: '', id: Date.now() + Math.random()
+        }));
+      }
+      if (entries.length === 0) { notify('檔案無有效資料', 'error'); return; }
+      state.dataset.push(...entries);
+      saveToStorage();
+      renderDashboard();
+      renderDatasetTable();
+      addActivity(`上傳 ${file.name}，新增 ${entries.length} 筆資料`);
+      document.getElementById('uploadStatus').textContent = `✓ 成功匯入 ${entries.length} 筆資料`;
+      notify(`匯入 ${entries.length} 筆資料`, 'success');
+    } catch(err) {
+      notify('檔案解析失敗：' + err.message, 'error');
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let cur = '', inQuote = false;
+  for (let c of line) {
+    if (c === '"') { inQuote = !inQuote; continue; }
+    if (c === ',' && !inQuote) { result.push(cur.trim()); cur = ''; continue; }
+    cur += c;
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+function addManualEntry() {
+  const text = document.getElementById('manualText').value.trim();
+  if (!text) { notify('請輸入文字內容', 'error'); return; }
+  const entry = {
+    text,
+    label: document.getElementById('manualLabel').value,
+    note: document.getElementById('manualNote').value.trim(),
+    id: Date.now(),
+  };
+  state.dataset.push(entry);
+  saveToStorage();
+  document.getElementById('manualText').value = '';
+  document.getElementById('manualNote').value = '';
+  renderDashboard();
+  renderDatasetTable();
+  addActivity(`手動新增資料：${text.substring(0, 30)}...`);
+  notify('已新增一筆資料', 'success');
+}
+
+function loadSampleData() {
+  const samples = [
+    { text: '這個產品真的超棒！用起來非常順手，強力推薦給大家。', label: 'positive' },
+    { text: '服務態度很差，等了很久都沒人處理我的問題。', label: 'negative' },
+    { text: '今天天氣晴朗，適合出門走走。', label: 'neutral' },
+    { text: '食物很好吃，環境也舒適，下次還會再來。', label: 'positive' },
+    { text: '這次購物體驗很糟糕，貨品損壞嚴重。', label: 'negative' },
+    { text: '會議訂於下午三點，請準時出席。', label: 'neutral' },
+    { text: '員工態度親切，解決問題的效率很高！', label: 'positive' },
+    { text: '品質完全不符合描述，非常失望。', label: 'negative' },
+    { text: '這是第五屆年度活動的通知。', label: 'neutral' },
+    { text: '使用後效果顯著，真的很有幫助！', label: 'positive' },
+    { text: '等待時間過長，嚴重影響使用者體驗。', label: 'negative' },
+    { text: '報告已於昨日提交，請查收。', label: 'neutral' },
+    { text: '設計精美，功能齊全，物超所值！', label: 'positive' },
+    { text: '退款流程複雜且耗時，令人沮喪。', label: 'negative' },
+    { text: '氣溫約攝氏25度，濕度適中。', label: 'neutral' },
+    { text: '客服人員非常專業，快速解決了我的疑問。', label: 'positive' },
+    { text: '收到的商品與照片完全不同，大失所望。', label: 'negative' },
+    { text: '系統將於週末進行例行維護。', label: 'neutral' },
+    { text: '口感鮮美，份量十足，價格公道！', label: 'positive' },
+    { text: '問題反映多次都沒有得到解決。', label: 'negative' },
+  ];
+  const newEntries = samples.map(s => ({ ...s, note: '示範資料', id: Date.now() + Math.random() }));
+  state.dataset.push(...newEntries);
+  saveToStorage();
+  renderDashboard();
+  renderDatasetTable();
+  addActivity('載入 20 筆示範資料');
+  notify('載入 20 筆示範資料', 'success');
+}
+
+// ═══════════════════════════════════════════
+//  LABEL
+// ═══════════════════════════════════════════
+function renderLabelInterface() {
+  const pending = state.dataset.filter(d => d.label === 'pending');
+  const total = state.dataset.length;
+  const labeled = total - pending.length;
+  const pct = total > 0 ? Math.round((labeled / total) * 100) : 0;
+
+  document.getElementById('labelProgressText').textContent = `${labeled} / ${total}`;
+  document.getElementById('labelProgressFill').style.width = pct + '%';
+
+  const container = document.getElementById('labelContent');
+  if (pending.length === 0) {
+    container.innerHTML = `<div class="label-card">
+      <div style="text-align:center;padding:2rem">
+        <div style="font-size:2rem;margin-bottom:1rem">${total === 0 ? '📂' : '✅'}</div>
+        <p class="text-muted">${total === 0 ? '請先上傳資料。' : '所有資料已標記完成！'}</p>
+      </div>
+    </div>`;
+    return;
+  }
+
+  const entry = pending[0];
+  const globalIdx = state.dataset.indexOf(entry);
+
+  container.innerHTML = `
+    <div class="label-card">
+      <div style="display:flex;justify-content:space-between;margin-bottom:1rem">
+        <span class="text-muted" style="font-family:var(--mono);font-size:0.75rem">待標記 ${pending.length} 筆</span>
+        <span class="tag tag-pending">⏳ 待標記</span>
+      </div>
+      <div class="label-text">${escHtml(entry.text)}</div>
+      <div class="label-buttons">
+        <button class="label-btn pos" onclick="applyLabel(${globalIdx}, 'positive')">✅ 正面</button>
+        <button class="label-btn neg" onclick="applyLabel(${globalIdx}, 'negative')">❌ 負面</button>
+        <button class="label-btn neu" onclick="applyLabel(${globalIdx}, 'neutral')">⚪ 中性</button>
+      </div>
+      <div style="margin-top:1rem">
+        <label>備註（選填）</label>
+        <input type="text" id="labelNote" placeholder="新增備註..." style="margin-bottom:0">
+      </div>
+    </div>
+  `;
+}
+
+function applyLabel(idx, label) {
+  const note = document.getElementById('labelNote')?.value.trim() || '';
+  state.dataset[idx].label = label;
+  state.dataset[idx].note = note;
+  saveToStorage();
+  addActivity(`標記資料 #${idx + 1} 為「${label}」`);
+  renderLabelInterface();
+  renderDashboard();
+}
+
+function skipCurrent() {
+  const pending = state.dataset.filter(d => d.label === 'pending');
+  if (pending.length < 2) return;
+  const entry = pending[0];
+  const idx = state.dataset.indexOf(entry);
+  // Move to end
+  state.dataset.splice(idx, 1);
+  state.dataset.push(entry);
+  saveToStorage();
+  renderLabelInterface();
+}
+
+function bindKeyboardShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    const page = document.querySelector('.page.active')?.id;
+    if (page !== 'page-label') return;
+    const pending = state.dataset.filter(d => d.label === 'pending');
+    if (!pending.length) return;
+    const idx = state.dataset.indexOf(pending[0]);
+    if (e.key === '1') applyLabel(idx, 'positive');
+    else if (e.key === '2') applyLabel(idx, 'negative');
+    else if (e.key === '3') applyLabel(idx, 'neutral');
+    else if (e.key === 'ArrowRight') skipCurrent();
+  });
+}
+
+// ═══════════════════════════════════════════
+//  PROMPT
+// ═══════════════════════════════════════════
+function savePromptConfig() {
+  state.config.systemPrompt = document.getElementById('systemPrompt').value;
+  state.config.taskDesc = document.getElementById('taskDesc').value;
+  state.config.fewShotCount = parseInt(document.getElementById('fewShotCount').value) || 3;
+  state.config.fewShotStrategy = document.getElementById('fewShotStrategy').value;
+  saveToStorage();
+  generatePromptPreview();
+  notify('Prompt 設定已儲存', 'success');
+}
+
+function generatePromptPreview() {
+  const sys = (document.getElementById('systemPrompt')?.value || state.config.systemPrompt);
+  const task = (document.getElementById('taskDesc')?.value || state.config.taskDesc);
+  const count = parseInt(document.getElementById('fewShotCount')?.value || state.config.fewShotCount);
+  const strategy = document.getElementById('fewShotStrategy')?.value || state.config.fewShotStrategy;
+
+  let examples = state.dataset.filter(d => d.label !== 'pending');
+  if (strategy === 'balanced') {
+    const pos = examples.filter(d => d.label === 'positive').slice(0, Math.ceil(count / 3));
+    const neg = examples.filter(d => d.label === 'negative').slice(0, Math.ceil(count / 3));
+    const neu = examples.filter(d => d.label === 'neutral').slice(0, Math.ceil(count / 3));
+    examples = [...pos, ...neg, ...neu].slice(0, count);
+  } else if (strategy === 'recent') {
+    examples = examples.slice(-count);
+  } else {
+    examples = examples.sort(() => Math.random() - 0.5).slice(0, count);
+  }
+
+  let preview = `[SYSTEM PROMPT]\n${sys || '（未設定）'}\n\n`;
+  preview += `[TASK]\n${task || '（未設定）'}\n\n`;
+  if (examples.length > 0) {
+    preview += `[FEW-SHOT EXAMPLES (${examples.length}/${count})]\n`;
+    examples.forEach((ex, i) => {
+      preview += `\n範例 ${i + 1}:\nInput: ${ex.text}\nLabel: ${ex.label}\n`;
+    });
+    preview += '\n';
+  }
+  preview += `[USER INPUT]\n{text_to_classify}\n\n[EXPECTED OUTPUT]\n分類：{positive|negative|neutral}\n原因：{explanation}`;
+  document.getElementById('promptPreview').textContent = preview;
+}
+
+function renderPromptPreview() {
+  const sp = document.getElementById('systemPrompt');
+  const td = document.getElementById('taskDesc');
+  if (sp) sp.value = state.config.systemPrompt;
+  if (td) td.value = state.config.taskDesc;
+}
+
+// ═══════════════════════════════════════════
+//  TRAINING
+// ═══════════════════════════════════════════
+let trainAbort = false;
+
+async function startTraining() {
+  if (!state.config.apiKey) { notify('請先在設定頁面輸入 API Key', 'error'); navigate('settings'); return; }
+  const labeled = state.dataset.filter(d => d.label !== 'pending');
+  if (labeled.length === 0) { notify('請先標記至少一筆資料', 'error'); return; }
+
+  trainAbort = false;
+  state.training.running = true;
+  document.getElementById('btnStartTrain').disabled = true;
+  document.getElementById('btnStopTrain').disabled = false;
+
+  const mode = document.getElementById('trainMode').value;
+  const batchSize = parseInt(document.getElementById('batchSize').value) || 5;
+  const temp = parseFloat(document.getElementById('temperature').value) || 0.3;
+
+  clearTrainLog();
+  trainLog('info', `訓練開始 — 模式: ${mode}, 批次: ${batchSize}, 溫度: ${temp}`);
+  trainLog('info', `資料集: ${labeled.length} 筆已標記資料`);
+
+  const batches = [];
+  for (let i = 0; i < labeled.length; i += batchSize) batches.push(labeled.slice(i, i + batchSize));
+  trainLog('info', `共 ${batches.length} 個批次`);
+
+  let correct = 0, total = 0;
+
+  for (let bi = 0; bi < batches.length; bi++) {
+    if (trainAbort) { trainLog('warn', '訓練已中止'); break; }
+    const batch = batches[bi];
+    trainLog('info', `處理批次 ${bi + 1}/${batches.length}...`);
+
+    const pct = Math.round(((bi) / batches.length) * 100);
+    document.getElementById('trainProgressFill').style.width = pct + '%';
+    document.getElementById('trainProgressPct').textContent = pct + '%';
+
+    for (const entry of batch) {
+      if (trainAbort) break;
+      try {
+        const result = await callClaude(entry.text, temp);
+        const predicted = extractLabel(result);
+        const isCorrect = predicted === entry.label;
+        if (isCorrect) correct++;
+        total++;
+        trainLog(isCorrect ? 'success' : 'warn',
+          `${isCorrect ? '✓' : '✗'} 預測: ${predicted} | 正解: ${entry.label}`);
+
+        state.training.results.push({ text: entry.text, predicted, actual: entry.label, correct: isCorrect });
+      } catch(err) {
+        trainLog('err', `API 錯誤: ${err.message}`);
+        total++;
+      }
+      await sleep(200);
+    }
+  }
+
+  const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+  trainLog('success', `訓練完成！準確率: ${accuracy}% (${correct}/${total})`);
+  document.getElementById('trainProgressFill').style.width = '100%';
+  document.getElementById('trainProgressPct').textContent = '100%';
+  document.getElementById('trainStats').innerHTML = `
+    準確率: <span style="color:var(--accent)">${accuracy}%</span><br>
+    正確: ${correct} / 總計: ${total}<br>
+    完成輪數: ${++state.training.rounds}
+  `;
+
+  state.training.running = false;
+  document.getElementById('btnStartTrain').disabled = false;
+  document.getElementById('btnStopTrain').disabled = true;
+  addActivity(`完成一輪訓練，準確率 ${accuracy}%`);
+  state.evalHistory.push({ time: new Date().toLocaleString('zh-TW'), accuracy, total, mode });
+  saveToStorage();
+  renderDashboard();
+  notify(`訓練完成，準確率 ${accuracy}%`, 'success');
+}
+
+function stopTraining() {
+  trainAbort = true;
+  document.getElementById('btnStartTrain').disabled = false;
+  document.getElementById('btnStopTrain').disabled = true;
+}
+
+function clearTrainLog() {
+  document.getElementById('trainLog').innerHTML = '';
+}
+
+function trainLog(type, msg) {
+  const log = document.getElementById('trainLog');
+  const time = new Date().toLocaleTimeString('zh-TW', { hour12: false });
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  line.innerHTML = `<span class="log-time">${time}</span><span class="log-${type}">${escHtml(msg)}</span>`;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+function extractLabel(text) {
+  const lower = text.toLowerCase();
+  if (lower.includes('正面') || lower.includes('positive')) return 'positive';
+  if (lower.includes('負面') || lower.includes('negative')) return 'negative';
+  if (lower.includes('中性') || lower.includes('neutral')) return 'neutral';
+  return 'neutral';
+}
+
+// ═══════════════════════════════════════════
+//  EVAL / CHAT
+// ═══════════════════════════════════════════
+async function sendChat() {
+  if (!state.config.apiKey) { notify('請先設定 API Key', 'error'); navigate('settings'); return; }
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+
+  addChatMsg('user', msg);
+  state.chatHistory.push({ role: 'user', content: msg });
+  document.getElementById('btnSendChat').disabled = true;
+
+  try {
+    const reply = await callClaudeChat(state.chatHistory);
+    addChatMsg('ai', reply);
+    state.chatHistory.push({ role: 'assistant', content: reply });
+  } catch(e) {
+    addChatMsg('ai', '❌ 錯誤：' + e.message);
+  }
+  document.getElementById('btnSendChat').disabled = false;
+}
+
+function addChatMsg(role, text) {
+  const msgs = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = `msg msg-${role}`;
+  div.innerHTML = `<div class="msg-role">${role === 'user' ? 'YOU' : 'AI_ASSISTANT'}</div>${escHtml(text)}`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+async function runBatchEval() {
+  if (!state.config.apiKey) { notify('請先設定 API Key', 'error'); navigate('settings'); return; }
+  const labeled = state.dataset.filter(d => d.label !== 'pending');
+  if (labeled.length < 5) { notify('需要至少 5 筆已標記資料', 'error'); return; }
+
+  const pct = parseInt(document.getElementById('evalSplit').value) || 20;
+  const testSize = Math.max(1, Math.floor(labeled.length * pct / 100));
+  const testSet = labeled.sort(() => Math.random() - 0.5).slice(0, testSize);
+
+  document.getElementById('btnRunEval').disabled = true;
+  document.getElementById('evalResults').innerHTML = '<p class="text-muted">評估中...</p>';
+
+  let correct = 0;
+  const results = [];
+
+  for (const entry of testSet) {
+    try {
+      const reply = await callClaude(entry.text, 0.1);
+      const predicted = extractLabel(reply);
+      const ok = predicted === entry.label;
+      if (ok) correct++;
+      results.push({ text: entry.text.substring(0, 40), predicted, actual: entry.label, ok });
+    } catch(e) {
+      results.push({ text: entry.text.substring(0, 40), predicted: 'error', actual: entry.label, ok: false });
+    }
+    await sleep(300);
+  }
+
+  const acc = Math.round((correct / testSet.length) * 100);
+  document.getElementById('evalResults').innerHTML = `
+    <div style="margin-bottom:1rem">
+      <div style="font-family:var(--mono);font-size:1.5rem;color:var(--accent)">${acc}%</div>
+      <div class="text-muted">準確率 (${correct}/${testSet.length})</div>
+    </div>
+    <table style="font-size:0.75rem">
+      <tr><th>文字預覽</th><th>預測</th><th>正解</th><th>結果</th></tr>
+      ${results.map(r => `<tr>
+        <td>${escHtml(r.text)}...</td>
+        <td>${r.predicted}</td>
+        <td>${r.actual}</td>
+        <td>${r.ok ? '✓' : '✗'}</td>
+      </tr>`).join('')}
+    </table>
+  `;
+
+  state.evalHistory.push({ time: new Date().toLocaleString('zh-TW'), accuracy: acc, total: testSet.length, mode: 'eval' });
+  saveToStorage();
+  renderEvalHistory();
+  document.getElementById('btnRunEval').disabled = false;
+  notify(`評估完成，準確率 ${acc}%`, 'success');
+}
+
+function renderEvalHistory() {
+  const hist = state.evalHistory.slice(-5).reverse();
+  document.getElementById('evalHistory').innerHTML = hist.length
+    ? hist.map(h => `<div>${h.time} — ${h.accuracy}% (n=${h.total})</div>`).join('')
+    : '無評估記錄。';
+}
+
+// ═══════════════════════════════════════════
+//  API CALLS
+// ═══════════════════════════════════════════
+async function callClaude(text, temperature = 0.3) {
+  const sys = state.config.systemPrompt;
+  const task = state.config.taskDesc;
+  const prompt = `${task}\n\n文字：${text}\n\n請回答：分類（正面/負面/中性）及原因。`;
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': state.config.apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: state.config.model,
+      max_tokens: state.config.maxTokens,
+      system: sys,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `HTTP ${response.status}`);
+  }
+  const data = await response.json();
+  return data.content?.[0]?.text || '';
+}
+
+async function callClaudeChat(history) {
+  const labeled = state.dataset.filter(d => d.label !== 'pending').slice(0, 3);
+  let sys = state.config.systemPrompt;
+  if (labeled.length > 0) {
+    sys += '\n\n以下是訓練資料範例：\n' + labeled.map(e => `文字: ${e.text}\n標籤: ${e.label}`).join('\n\n');
+  }
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': state.config.apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: state.config.model,
+      max_tokens: state.config.maxTokens,
+      system: sys,
+      messages: history,
+    }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `HTTP ${response.status}`);
+  }
+  const data = await response.json();
+  return data.content?.[0]?.text || '';
+}
+
+// ═══════════════════════════════════════════
+//  EXPORT / IMPORT
+// ═══════════════════════════════════════════
+function exportData(format) {
+  let content, filename, type;
+  if (format === 'json') {
+    content = JSON.stringify({ dataset: state.dataset, config: state.config }, null, 2);
+    filename = 'ai_trainer_backup.json'; type = 'application/json';
+  } else if (format === 'csv') {
+    const rows = [['text', 'label', 'note']];
+    state.dataset.forEach(d => rows.push([`"${d.text.replace(/"/g,'""')}"`, d.label, d.note || '']));
+    content = rows.map(r => r.join(',')).join('\n');
+    filename = 'dataset.csv'; type = 'text/csv';
+  } else if (format === 'labeled') {
+    const labeled = state.dataset.filter(d => d.label !== 'pending');
+    content = JSON.stringify(labeled, null, 2);
+    filename = 'labeled_dataset.json'; type = 'application/json';
+  } else if (format === 'openai') {
+    const labeled = state.dataset.filter(d => d.label !== 'pending');
+    const lines = labeled.map(d => JSON.stringify({
+      messages: [
+        { role: 'system', content: state.config.systemPrompt },
+        { role: 'user', content: d.text },
+        { role: 'assistant', content: `分類：${d.label}` },
+      ]
+    }));
+    content = lines.join('\n');
+    filename = 'openai_finetune.jsonl'; type = 'application/json';
+  } else if (format === 'prompt') {
+    content = JSON.stringify(state.config, null, 2);
+    filename = 'prompt_config.json'; type = 'application/json';
+  }
+  const blob = new Blob([content], { type });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  notify(`已匯出 ${filename}`, 'success');
+}
+
+function importBackup(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (data.dataset) {
+        state.dataset.push(...data.dataset);
+        notify(`匯入 ${data.dataset.length} 筆資料`, 'success');
+      }
+      if (data.config) Object.assign(state.config, data.config);
+      saveToStorage();
+      renderDashboard();
+      renderDatasetTable();
+    } catch(err) {
+      notify('備份檔案解析失敗', 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ═══════════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════════
+function loadSettingsUI() {
+  if (state.config.apiKey) document.getElementById('apiKey').value = state.config.apiKey;
+  document.getElementById('modelSelect').value = state.config.model;
+  document.getElementById('maxTokens').value = state.config.maxTokens;
+  document.getElementById('systemPrompt').value = state.config.systemPrompt;
+  document.getElementById('taskDesc').value = state.config.taskDesc;
+}
+
+async function saveSettings() {
+  state.config.apiKey = document.getElementById('apiKey').value.trim();
+  state.config.model = document.getElementById('modelSelect').value;
+  state.config.maxTokens = parseInt(document.getElementById('maxTokens').value) || 1000;
+  saveToStorage();
+  updateApiStatus();
+
+  const resultEl = document.getElementById('connTestResult');
+  resultEl.textContent = '測試連線中...';
+  resultEl.style.color = 'var(--text2)';
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': state.config.apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: state.config.model,
+        max_tokens: 10,
+        messages: [{ role: 'user', content: 'hi' }],
+      }),
+    });
+    if (resp.ok) {
+      resultEl.textContent = '✓ 連線成功！';
+      resultEl.style.color = 'var(--accent3)';
+      updateApiStatus(true);
+      notify('API 連線成功', 'success');
+    } else {
+      const err = await resp.json().catch(() => ({}));
+      resultEl.textContent = '✕ ' + (err?.error?.message || `HTTP ${resp.status}`);
+      resultEl.style.color = 'var(--danger)';
+      updateApiStatus(false);
+    }
+  } catch(e) {
+    resultEl.textContent = '✕ 連線失敗（可能是 CORS 限制）';
+    resultEl.style.color = 'var(--danger)';
+  }
+}
+
+function updateApiStatus(connected) {
+  const el = document.getElementById('apiStatusBadge');
+  const hasKey = !!state.config.apiKey;
+  if (connected === true) { el.className = 'api-status connected'; el.textContent = '已連線'; }
+  else if (connected === false || !hasKey) { el.className = 'api-status disconnected'; el.textContent = '未連線'; }
+  else { el.className = 'api-status disconnected'; el.textContent = '未驗證'; }
+}
+
+function resetAll() {
+  state.dataset = [];
+  state.activity = [];
+  state.evalHistory = [];
+  state.training.rounds = 0;
+  state.training.results = [];
+  localStorage.removeItem('ai_trainer_state');
+  renderDashboard();
+  renderDatasetTable();
+  notify('所有資料已重置', 'info');
+}
+
+// ═══════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════
+function escHtml(str) {
+  return String(str || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function notify(msg, type = 'info') {
+  const container = document.getElementById('notif');
+  const el = document.createElement('div');
+  el.className = `notif-item notif-${type}`;
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 3000);
+}
+
+// ═══════════════════════════════════════════
+//  START
+// ═══════════════════════════════════════════
+init();
+</script>
 </body>
 </html>
