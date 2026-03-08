@@ -1,42 +1,679 @@
-<script type="module">
-  window.sendMessage = async function () {
-    const inputField = document.getElementById('userInput');
-    const chatContainer = document.getElementById('chat-container');
-    const sendBtn = document.getElementById('sendBtn');
-    const question = inputField.value.trim();
-
-    if (!question) return;
-
-    appendMessage('user', question);
-    inputField.value = '';
-    sendBtn.disabled = true;
-
-    const aiMsgDiv = appendMessage('ai', '思考中...');
-
-    try {
-      const response = await fetch("/api/gemini", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: question })
-      });
-
-      const data = await response.json();
-      aiMsgDiv.innerText = data.text || "沒有回應";
-    } catch (error) {
-      aiMsgDiv.innerText = "抱歉，發生錯誤：" + error.message;
-    } finally {
-      sendBtn.disabled = false;
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-    }
-  };
-
-  function appendMessage(sender, text) {
-    const container = document.getElementById('chat-container');
-    const msgDiv = document.createElement('div');
-    msgDiv.className = `message ${sender}`;
-    msgDiv.innerText = text;
-    container.appendChild(msgDiv);
-    container.scrollTop = container.scrollHeight;
-    return msgDiv;
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 雙星對話</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #11111a;
+    --border: #1e1e2e;
+    --accent-a: #7c6af7;
+    --accent-b: #2dd4bf;
+    --text: #e8e8f0;
+    --muted: #6b6b85;
+    --glow-a: rgba(124,106,247,0.15);
+    --glow-b: rgba(45,212,191,0.15);
   }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Serif TC', serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      radial-gradient(ellipse 80% 50% at 20% 20%, rgba(124,106,247,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(45,212,191,0.06) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    padding: 3rem 0 2rem;
+    text-align: center;
+  }
+
+  .logo-line {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  .dot-a { background: var(--accent-a); box-shadow: 0 0 12px var(--accent-a); }
+  .dot-b { background: var(--accent-b); box-shadow: 0 0 12px var(--accent-b); animation-delay: 1s; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
+  }
+
+  h1 {
+    font-family: 'Space Mono', monospace;
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--accent-a) 0%, #c084fc 40%, var(--accent-b) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    font-size: 0.85rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    font-family: 'Space Mono', monospace;
+    text-transform: uppercase;
+  }
+
+  /* API Key Section */
+  .api-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 2rem 0;
+  }
+
+  .api-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    transition: border-color 0.3s;
+  }
+
+  .api-card:hover { border-color: var(--accent-a); }
+  .api-card.gemini:hover { border-color: var(--accent-b); }
+
+  .api-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .api-label.claude { color: var(--accent-a); }
+  .api-label.gemini { color: var(--accent-b); }
+
+  .api-input {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.6rem 0.9rem;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .api-input:focus { border-color: var(--accent-a); }
+  .api-card.gemini .api-input:focus { border-color: var(--accent-b); }
+  .api-input::placeholder { color: var(--muted); }
+
+  /* Question Input */
+  .question-section {
+    margin-bottom: 1.5rem;
+  }
+
+  .question-wrapper {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.25rem;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+    transition: border-color 0.3s;
+  }
+
+  .question-wrapper:focus-within {
+    border-color: rgba(124,106,247,0.5);
+    box-shadow: 0 0 30px rgba(124,106,247,0.08);
+  }
+
+  .question-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'Noto Serif TC', serif;
+    font-size: 1rem;
+    line-height: 1.6;
+    resize: none;
+    min-height: 56px;
+    max-height: 160px;
+  }
+
+  .question-input::placeholder { color: var(--muted); }
+
+  .send-btn {
+    background: linear-gradient(135deg, var(--accent-a), #a78bfa);
+    border: none;
+    border-radius: 10px;
+    padding: 0.75rem 1.5rem;
+    color: white;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+
+  .send-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(124,106,247,0.4);
+  }
+
+  .send-btn:active { transform: translateY(0); }
+  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* Results Grid */
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .result-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 300px;
+    transition: border-color 0.3s;
+  }
+
+  .result-panel.claude { border-top: 2px solid var(--accent-a); }
+  .result-panel.gemini { border-top: 2px solid var(--accent-b); }
+
+  .panel-header {
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-name {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .panel-name.claude { color: var(--accent-a); }
+  .panel-name.gemini { color: var(--accent-b); }
+
+  .panel-model {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+  }
+  .status-dot.active { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+  .status-dot.loading {
+    background: #f59e0b;
+    box-shadow: 0 0 8px #f59e0b;
+    animation: pulse 0.8s ease-in-out infinite;
+  }
+  .status-dot.error { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+
+  .panel-body {
+    padding: 1.5rem;
+    flex: 1;
+    overflow-y: auto;
+    line-height: 1.8;
+    font-size: 0.95rem;
+  }
+
+  .panel-body.empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-align: center;
+  }
+
+  /* Streaming text cursor */
+  .streaming::after {
+    content: '▊';
+    animation: blink 0.7s step-end infinite;
+    color: var(--accent-a);
+  }
+  .gemini .streaming::after { color: var(--accent-b); }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* Loading skeleton */
+  .skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .skel-line {
+    height: 14px;
+    background: linear-gradient(90deg, var(--border) 25%, rgba(255,255,255,0.05) 50%, var(--border) 75%);
+    background-size: 200% 100%;
+    border-radius: 4px;
+    animation: shimmer 1.5s infinite;
+  }
+
+  .skel-line:nth-child(2) { width: 90%; animation-delay: 0.1s; }
+  .skel-line:nth-child(3) { width: 75%; animation-delay: 0.2s; }
+  .skel-line:nth-child(4) { width: 95%; animation-delay: 0.15s; }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    padding: 0.75rem 1.5rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 1.5rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+  }
+
+  .stat span { color: var(--text); }
+
+  /* Error state */
+  .error-msg {
+    color: #fc8181;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    padding: 1rem;
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.2);
+    border-radius: 8px;
+  }
+
+  /* History */
+  .history-section {
+    margin-top: 1rem;
+  }
+
+  .history-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  .history-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--muted);
+    transition: all 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .history-item:hover {
+    border-color: var(--accent-a);
+    color: var(--text);
+  }
+
+  /* Divider */
+  .divider {
+    text-align: center;
+    position: relative;
+    margin: 1.5rem 0;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+  }
+
+  .divider::before, .divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 42%;
+    height: 1px;
+    background: var(--border);
+  }
+  .divider::before { left: 0; }
+  .divider::after { right: 0; }
+
+  /* Response text formatting */
+  .panel-body p { margin-bottom: 0.75em; }
+  .panel-body strong { color: white; font-weight: 600; }
+  .panel-body code {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8em;
+    background: rgba(255,255,255,0.06);
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+  }
+
+  @media (max-width: 768px) {
+    .api-section, .results-grid {
+      grid-template-columns: 1fr;
+    }
+    h1 { font-size: 1.5rem; }
+    .send-btn { padding: 0.75rem 1rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo-line">
+      <div class="dot dot-a"></div>
+      <h1>AI 雙星對話</h1>
+      <div class="dot dot-b"></div>
+    </div>
+    <p class="subtitle">Dual AI · Parallel Responses · Side by Side</p>
+  </header>
+
+  <!-- API Keys -->
+  <div class="api-section">
+    <div class="api-card">
+      <div class="api-label claude">▸ Claude API Key</div>
+      <input type="password" id="claude-key" class="api-input" placeholder="sk-ant-..." />
+    </div>
+    <div class="api-card gemini">
+      <div class="api-label gemini">▸ Gemini API Key</div>
+      <input type="password" id="gemini-key" class="api-input" placeholder="AIza..." />
+    </div>
+  </div>
+
+  <div class="divider">輸入你的問題</div>
+
+  <!-- Question Input -->
+  <div class="question-section">
+    <div class="question-wrapper">
+      <textarea
+        id="question"
+        class="question-input"
+        placeholder="輸入任何問題，兩個 AI 將同時作答..."
+        rows="2"
+      ></textarea>
+      <button class="send-btn" id="send-btn" onclick="askBoth()">
+        發送 ↗
+      </button>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="results-grid">
+    <!-- Claude Panel -->
+    <div class="result-panel claude" id="claude-panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-name claude">Claude</div>
+          <div class="panel-model">claude-sonnet-4-20250514</div>
+        </div>
+        <div class="status-dot" id="claude-status"></div>
+      </div>
+      <div class="panel-body empty" id="claude-body">
+        <span>等待提問...</span>
+      </div>
+      <div class="stats-bar" id="claude-stats" style="display:none">
+        <div class="stat">耗時 <span id="claude-time">—</span></div>
+        <div class="stat">字數 <span id="claude-chars">—</span></div>
+      </div>
+    </div>
+
+    <!-- Gemini Panel -->
+    <div class="result-panel gemini" id="gemini-panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-name gemini">Gemini</div>
+          <div class="panel-model">gemini-2.0-flash</div>
+        </div>
+        <div class="status-dot" id="gemini-status"></div>
+      </div>
+      <div class="panel-body empty" id="gemini-body">
+        <span>等待提問...</span>
+      </div>
+      <div class="stats-bar" id="gemini-stats" style="display:none">
+        <div class="stat">耗時 <span id="gemini-time">—</span></div>
+        <div class="stat">字數 <span id="gemini-chars">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="history-section" id="history-section" style="display:none">
+    <div class="history-label">▸ 歷史紀錄</div>
+    <div id="history-list"></div>
+  </div>
+</div>
+
+<script>
+const history = [];
+
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\n/g, "<br>")
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    .replace(/`([^`]+)`/g, "<code>$1</code>");
+}
+
+function setLoading(ai) {
+  const body = document.getElementById(`${ai}-body`);
+  const status = document.getElementById(`${ai}-status`);
+  const stats = document.getElementById(`${ai}-stats`);
+  
+  body.classList.remove('empty');
+  body.innerHTML = '<div class="skeleton"><div class="skel-line"></div><div class="skel-line"></div><div class="skel-line"></div><div class="skel-line"></div></div>';
+  status.className = 'status-dot loading';
+  stats.style.display = 'none';
+}
+
+function setResult(ai, text, elapsed) {
+  const body = document.getElementById(`${ai}-body`);
+  const status = document.getElementById(`${ai}-status`);
+  const stats = document.getElementById(`${ai}-stats`);
+
+  body.classList.remove('empty');
+  body.innerHTML = `<p>${escapeHtml(text)}</p>`;
+  status.className = 'status-dot active';
+  
+  document.getElementById(`${ai}-time`).textContent = `${elapsed}ms`;
+  document.getElementById(`${ai}-chars`).textContent = `${text.length} 字`;
+  stats.style.display = 'flex';
+}
+
+function setError(ai, msg) {
+  const body = document.getElementById(`${ai}-body`);
+  const status = document.getElementById(`${ai}-status`);
+  
+  body.classList.remove('empty');
+  body.innerHTML = `<div class="error-msg">⚠ ${escapeHtml(msg)}</div>`;
+  status.className = 'status-dot error';
+}
+
+async function askClaude(question, apiKey) {
+  const start = Date.now();
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01"
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1024,
+      messages: [{ role: "user", content: question }]
+    })
+  });
+  
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `HTTP ${res.status}`);
+  }
+  
+  const data = await res.json();
+  const text = data.content?.map(c => c.text || '').join('') || '';
+  return { text, elapsed: Date.now() - start };
+}
+
+async function askGemini(question, apiKey) {
+  const start = Date.now();
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: question }] }],
+        generationConfig: { maxOutputTokens: 1024 }
+      })
+    }
+  );
+  
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `HTTP ${res.status}`);
+  }
+  
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
+  return { text, elapsed: Date.now() - start };
+}
+
+async function askBoth() {
+  const question = document.getElementById('question').value.trim();
+  const claudeKey = document.getElementById('claude-key').value.trim();
+  const geminiKey = document.getElementById('gemini-key').value.trim();
+
+  if (!question) {
+    document.getElementById('question').focus();
+    return;
+  }
+  if (!claudeKey && !geminiKey) {
+    alert('請至少填入一個 API Key');
+    return;
+  }
+
+  document.getElementById('send-btn').disabled = true;
+  
+  // Set loading states
+  if (claudeKey) setLoading('claude');
+  if (geminiKey) setLoading('gemini');
+
+  // Fire both requests in parallel
+  const claudePromise = claudeKey
+    ? askClaude(question, claudeKey)
+        .then(r => setResult('claude', r.text, r.elapsed))
+        .catch(e => setError('claude', e.message))
+    : Promise.resolve();
+
+  const geminiPromise = geminiKey
+    ? askGemini(question, geminiKey)
+        .then(r => setResult('gemini', r.text, r.elapsed))
+        .catch(e => setError('gemini', e.message))
+    : Promise.resolve();
+
+  await Promise.all([claudePromise, geminiPromise]);
+
+  // Add to history
+  history.unshift(question);
+  if (history.length > 5) history.pop();
+  renderHistory();
+
+  document.getElementById('send-btn').disabled = false;
+  document.getElementById('question').value = '';
+}
+
+function renderHistory() {
+  const section = document.getElementById('history-section');
+  const list = document.getElementById('history-list');
+  
+  if (history.length === 0) { section.style.display = 'none'; return; }
+  
+  section.style.display = 'block';
+  list.innerHTML = history.map(q => 
+    `<div class="history-item" onclick="reuseQuestion(this.dataset.q)" data-q="${q.replace(/"/g,'&quot;')}">${q}</div>`
+  ).join('');
+}
+
+function reuseQuestion(q) {
+  document.getElementById('question').value = q;
+  document.getElementById('question').focus();
+}
+
+// Enter key support (Shift+Enter for newline)
+document.getElementById('question').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    askBoth();
+  }
+});
+
+// Auto-resize textarea
+document.getElementById('question').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 160) + 'px';
+});
 </script>
+</body>
+</html>
